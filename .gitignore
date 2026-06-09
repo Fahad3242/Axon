@@ -1,0 +1,11 @@
+# Compiler outputs
+out/
+cache/
+broadcast/
+
+# Environment variables
+.env
+
+# OS-specific files
+.DS_Store
+Thumbs.db
