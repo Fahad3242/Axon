@@ -10,24 +10,23 @@ export class TransactionService {
     private readonly transactionRepository: Repository<Transaction>,
   ) {}
 
-  async createPending(
-    srcChainId: number,
-    destChainId: number,
-    srcTxHash: string,
-    recipient: string,
-    amount: string,
-  ): Promise<Transaction> {
-    const existing = await this.findBySrcTxHash(srcTxHash);
+  async create(data: {
+    srcChain: 'sepolia' | 'amoy';
+    srcTxHash: string;
+    sender: string;
+    amount: string;
+    eventTxHash: string;
+  }): Promise<Transaction> {
+    const existing = await this.findBySrcTxHash(data.srcTxHash);
     if (existing) {
       return existing;
     }
 
     const tx = this.transactionRepository.create({
-      srcChainId,
-      destChainId,
-      srcTxHash: srcTxHash.toLowerCase(),
-      recipient: recipient.toLowerCase(),
-      amount,
+      ...data,
+      srcTxHash: data.srcTxHash.toLowerCase(),
+      sender: data.sender.toLowerCase(),
+      eventTxHash: data.eventTxHash.toLowerCase(),
       status: TransactionStatus.PENDING,
     });
     return this.transactionRepository.save(tx);
@@ -47,7 +46,7 @@ export class TransactionService {
     if (destTxHash) {
       tx.destTxHash = destTxHash.toLowerCase();
     }
-    if (errorMessage) {
+    if (errorMessage !== undefined) {
       tx.errorMessage = errorMessage;
     }
     return this.transactionRepository.save(tx);
@@ -56,6 +55,13 @@ export class TransactionService {
   async findBySrcTxHash(srcTxHash: string): Promise<Transaction | null> {
     return this.transactionRepository.findOneBy({
       srcTxHash: srcTxHash.toLowerCase(),
+    });
+  }
+
+  async findBySender(sender: string): Promise<Transaction[]> {
+    return this.transactionRepository.find({
+      where: { sender: sender.toLowerCase() },
+      order: { createdAt: 'DESC' },
     });
   }
 
@@ -68,6 +74,7 @@ export class TransactionService {
   async findAll(): Promise<Transaction[]> {
     return this.transactionRepository.find({
       order: { createdAt: 'DESC' },
+      take: 50,
     });
   }
 }

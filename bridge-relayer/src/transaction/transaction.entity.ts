@@ -2,30 +2,34 @@ import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateCol
 
 export enum TransactionStatus {
   PENDING = 'PENDING',
-  SUBMITTED = 'SUBMITTED',
-  CONFIRMED = 'CONFIRMED',
+  CONFIRMING = 'CONFIRMING',
+  RELAYING = 'RELAYING',
+  COMPLETED = 'COMPLETED',
   FAILED = 'FAILED',
 }
 
 @Entity('transactions')
 export class Transaction {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column()
-  srcChainId: number;
-
-  @Column()
-  destChainId: number;
+  srcChain: string;
 
   @Column({ unique: true })
   srcTxHash: string;
 
+  @Column({ nullable: true })
+  destTxHash: string;
+
   @Column()
-  recipient: string;
+  sender: string;
 
   @Column()
   amount: string;
+
+  @Column()
+  eventTxHash: string;
 
   @Column({
     type: 'enum',
@@ -33,9 +37,6 @@ export class Transaction {
     default: TransactionStatus.PENDING,
   })
   status: TransactionStatus;
-
-  @Column({ nullable: true })
-  destTxHash: string;
 
   @Column({ nullable: true })
   errorMessage: string;
