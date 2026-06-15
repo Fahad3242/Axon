@@ -57,18 +57,58 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
-## Deployment
+## Deployment to Railway
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+The Axon Bridge Relayer is pre-configured for automated deployment to **Railway** using the included `Dockerfile` and `railway.json` parameters.
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### Deployment Steps
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
+1. **Push to GitHub**: Push this repository (or your monorepo containing `bridge-relayer`) to your GitHub account.
+2. **Create a Railway Project**:
+   - Log in to the [Railway Dashboard](https://railway.app).
+   - Click **New Project** &rarr; **Deploy from GitHub repo**.
+   - Select your repository and select the `bridge-relayer` service/sub-directory if deploying a monorepo.
+3. **Provision a PostgreSQL Database**:
+   - Inside your Railway project, click **New** &rarr; **Database** &rarr; **Add PostgreSQL**.
+   - Railway will automatically provision a PostgreSQL instance and inject the `DATABASE_URL` environment variable directly into your relayer service.
+4. **Configure Environment Variables**:
+   - Select your `bridge-relayer` service in the Railway canvas.
+   - Go to **Variables** and add the required parameters (see the table below).
+5. **Deploy**:
+   - Railway will detect the `Dockerfile` and `railway.json`, compile the NestJS backend via the multi-stage docker compiler, run the health check at `/health`, and deploy the container.
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+---
+
+### Required Environment Variables
+
+| Variable | Description |
+| :--- | :--- |
+| `DATABASE_URL` | The PostgreSQL database connection URI (Automatically injected by Railway). |
+| `SEPOLIA_HTTP_RPC` | HTTPS JSON-RPC endpoint for Sepolia testnet. |
+| `SEPOLIA_WS_RPC` | WebSocket (WSS) JSON-RPC endpoint for Sepolia testnet. |
+| `AMOY_HTTP_RPC` | HTTPS JSON-RPC endpoint for Polygon Amoy testnet. |
+| `AMOY_WS_RPC` | WebSocket (WSS) JSON-RPC endpoint for Polygon Amoy testnet. |
+| `BRIDGE_A_ADDRESS` | Address of the Bridge A contract on Sepolia (`0xd2c7926742AB4f6C6e8d64A7ad51870dDBd33cFE`). |
+| `BRIDGE_B_ADDRESS` | Address of the Bridge B contract on Amoy (`0xF95A94AcbA872885E7BAb86a2B1520833Fb0C225`). |
+| `RELAYER_PRIVATE_KEY` | Hex private key of the relayer account (to trigger minting on Amoy and release on Sepolia). |
+| `PORT` | The network port NestJS listens on (Defaults to `3001` or auto-injected by Railway). |
+
+---
+
+### How to Get WebSocket (WSS) RPC URLs
+
+The relayer relies on WebSockets (`wss://`) to listen for real-time contract events (`TokensLocked` on Sepolia and `TokensBurned` on Amoy).
+
+1. **Sign Up for Alchemy or Infura**:
+   - Go to [Alchemy](https://www.alchemy.com) or [Infura](https://www.infura.io) and create a free account.
+2. **Create Apps**:
+   - Create an app for **Ethereum Sepolia**.
+   - Create another app for **Polygon Amoy**.
+3. **Copy the API Endpoints**:
+   - Click **API Key** or **View Key** inside your app dashboard.
+   - You will see tabs for both **HTTPS** and **WebSockets (WS)**.
+   - Copy the HTTPS link for `HTTP_RPC` variables.
+   - Copy the `wss://` link for `WS_RPC` variables.
 
 ## Resources
 

@@ -1,18 +1,21 @@
-FROM node:20-alpine
-
+# Stage 1: Build NestJS Application
+FROM node:20-alpine AS builder
 WORKDIR /app
-
-# Copy package files
 COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
 
-# Install production dependencies only
-RUN npm install --production
+# Stage 2: Final Production Environment
+FROM node:20-alpine AS runner
+WORKDIR /app
+COPY package*.json ./
+RUN npm install --only=production
+COPY --from=builder /app/dist ./dist
 
-# Copy compiled distribution files
-COPY dist/ ./dist/
+# Use non-root node user for container security
+USER node
 
-# Expose port 3001
 EXPOSE 3001
 
-# Start the application
-CMD node dist/main.js
+CMD ["node", "dist/main.js"]

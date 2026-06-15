@@ -18,6 +18,10 @@ import { Transaction } from './transaction/transaction.entity';
         type: 'postgres',
         url: configService.get<string>('DATABASE_URL'),
         entities: [Transaction],
+        // WARNING: synchronize: true should not be used in production.
+        // It automatically aligns the DB schema with TypeORM entities,
+        // which can lead to columns/tables dropping and data loss during modifications.
+        // For production, synchronize should be false and migrations configured.
         synchronize: true,
       }),
       inject: [ConfigService],
