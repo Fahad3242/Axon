@@ -1,0 +1,108 @@
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #08080F;
+    --foreground: #FFFFFF;
+    --card: #111118;
+    --card-foreground: #FFFFFF;
+    --popover: #111118;
+    --popover-foreground: #FFFFFF;
+    --primary: #3B82F6;
+    --primary-foreground: #FFFFFF;
+    --secondary: #1E1E2E;
+    --secondary-foreground: #FFFFFF;
+    --muted: #1E1E2E;
+    --muted-foreground: #6B7280;
+    --accent: #1E1E2E;
+    --accent-foreground: #FFFFFF;
+    --destructive: #EF4444;
+    --destructive-foreground: #FFFFFF;
+    --border: #1E1E2E;
+    --input: #0D0D16;
+    --ring: #3B82F6;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: #08080F;
+    --foreground: #FFFFFF;
+    --card: #111118;
+    --card-foreground: #FFFFFF;
+    --popover: #111118;
+    --popover-foreground: #FFFFFF;
+    --primary: #3B82F6;
+    --primary-foreground: #FFFFFF;
+    --secondary: #1E1E2E;
+    --secondary-foreground: #FFFFFF;
+    --muted: #1E1E2E;
+    --muted-foreground: #6B7280;
+    --accent: #1E1E2E;
+    --accent-foreground: #FFFFFF;
+    --destructive: #EF4444;
+    --destructive-foreground: #FFFFFF;
+    --border: #1E1E2E;
+    --input: #0D0D16;
+    --ring: #3B82F6;
+  }
+
+  html {
+    background-color: #08080F;
+    color: #FFFFFF;
+    font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: #08080F;
+    color: #FFFFFF;
+    font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1E1E2E;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #3B82F6;
+  }
+
+  * {
+    border-color: #1E1E2E;
+  }
+}
+
+.font-editorial {
+  font-family: var(--font-editorial), Georgia, 'Times New Roman', serif;
+  font-style: italic;
+}
+
+.font-monument {
+  font-family: var(--font-monument), 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.glow-blue {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.15), 0 0 40px rgba(59, 130, 246, 0.05);
+}
+
+.glow-blue-strong {
+  box-shadow: 0 0 30px rgba(59, 130, 246, 0.3), 0 0 60px rgba(59, 130, 246, 0.1);
+}
+
+.border-glow {
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
