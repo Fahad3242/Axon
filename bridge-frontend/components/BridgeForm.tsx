@@ -19,357 +19,307 @@ import { useLockTokens } from '@/hooks/useBridgeA';
 import { useBurnTokens } from '@/hooks/useBridgeB';
 import TransactionStatus from './TransactionStatus';
 
+const PencilIcon = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+  </svg>
+);
+
+const ChevronDown = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M19 9l-7 7-7-7" />
+  </svg>
+);
+
+const DownArrow = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 5v14M19 12l-7 7-7-7" />
+  </svg>
+);
+
+const Spinner = () => (
+  <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+  </svg>
+);
+
 export default function BridgeForm() {
   const { address, isConnected, chain } = useAccount();
   const { openConnectModal } = useConnectModal();
   const { switchChain } = useSwitchChain();
 
-  // Direction Selector: true = Sepolia -> Amoy, false = Amoy -> Sepolia
   const [isSepoliaToAmoy, setIsSepoliaToAmoy] = useState<boolean>(true);
   const [amount, setAmount] = useState<string>('');
   const [srcTxHash, setSrcTxHash] = useState<string>('');
 
-  // Fetch balances for both source tokens
   const { balance: ttBalance, refetch: refetchTT } = useTokenBalance(TOKEN_ADDRESS);
   const { balance: wttBalance, refetch: refetchWTT } = useTokenBalance(WRAPPED_TOKEN_ADDRESS);
 
   const currentBalanceStr = isSepoliaToAmoy ? ttBalance : wttBalance;
   const currentBalance = parseFloat(currentBalanceStr || '0');
   const fromTokenLabel = isSepoliaToAmoy ? 'TT' : 'wTT';
-
+  const toTokenLabel = isSepoliaToAmoy ? 'wTT' : 'TT';
   const fromChainLabel = isSepoliaToAmoy ? 'Ethereum Sepolia' : 'Polygon Amoy';
-  const toChainLabel = isSepoliaToAmoy ? 'Polygon Amoy' : 'Ethereum Sepolia';
+  const toChainLabel = isSepoliaToAmoy ? 'Amoy' : 'Sepolia';
   const targetChainId = isSepoliaToAmoy ? 11155111 : 80002;
 
   const parsedAmount = amount ? parseUnits(amount, 18) : 0n;
 
-  // allowance check for Sepolia -> Amoy
   const { data: allowance, refetch: refetchAllowance } = useReadContract({
     address: TOKEN_ADDRESS,
     abi: ERC20_ABI,
     functionName: 'allowance',
     args: address && BRIDGE_A_ADDRESS ? [address, BRIDGE_A_ADDRESS] : undefined,
-    query: {
-      enabled: !!address && isSepoliaToAmoy,
-    },
+    query: { enabled: !!address && isSepoliaToAmoy },
   });
 
-  // Blockchain Transaction Hooks
-  const {
-    approve,
+  const { approve, isPending: isApprovePending, isConfirming: isApproveConfirming, isSuccess: isApproveSuccess, error: approveError } = useApproveToken(BRIDGE_A_ADDRESS, parsedAmount);
+  const { lock, txHash: lockTxHash, isPending: isLockPending, isConfirming: isLockConfirming, isSuccess: isLockSuccess, error: lockError } = useLockTokens();
+  const { burn, txHash: burnTxHash, isPending: isBurnPending, isConfirming: isBurnConfirming, isSuccess: isBurnSuccess, error: burnError } = useBurnTokens();
 
-    isPending: isApprovePending,
-    isConfirming: isApproveConfirming,
-    isSuccess: isApproveSuccess,
-    error: approveError,
-  } = useApproveToken(BRIDGE_A_ADDRESS, parsedAmount);
+  useEffect(() => { if (lockTxHash) setSrcTxHash(lockTxHash); }, [lockTxHash]);
+  useEffect(() => { if (burnTxHash) setSrcTxHash(burnTxHash); }, [burnTxHash]);
+  useEffect(() => { if (approveError) toast.error(approveError.message || 'Approval failed'); }, [approveError]);
+  useEffect(() => { if (lockError) toast.error(lockError.message || 'Lock & Bridge failed'); }, [lockError]);
+  useEffect(() => { if (burnError) toast.error(burnError.message || 'Burn & Bridge failed'); }, [burnError]);
+  useEffect(() => { if (isApproveSuccess) { refetchAllowance(); toast.success('Token approved!'); } }, [isApproveSuccess, refetchAllowance]);
+  useEffect(() => { if (isLockSuccess) { refetchTT(); toast.success('Tokens locked on Sepolia!'); } }, [isLockSuccess, refetchTT]);
+  useEffect(() => { if (isBurnSuccess) { refetchWTT(); toast.success('Tokens burned on Amoy!'); } }, [isBurnSuccess, refetchWTT]);
 
-  const {
-    lock,
-    txHash: lockTxHash,
-    isPending: isLockPending,
-    isConfirming: isLockConfirming,
-    isSuccess: isLockSuccess,
-    error: lockError,
-  } = useLockTokens();
-
-  const {
-    burn,
-    txHash: burnTxHash,
-    isPending: isBurnPending,
-    isConfirming: isBurnConfirming,
-    isSuccess: isBurnSuccess,
-    error: burnError,
-  } = useBurnTokens();
-
-  // Watch for successful transaction submission to set srcTxHash
-  useEffect(() => {
-    if (lockTxHash) {
-      setSrcTxHash(lockTxHash);
-    }
-  }, [lockTxHash]);
-
-  useEffect(() => {
-    if (burnTxHash) {
-      setSrcTxHash(burnTxHash);
-    }
-  }, [burnTxHash]);
-
-  // Display errors as Sonner toasts
-  useEffect(() => {
-    if (approveError) {
-      toast.error(approveError.message || 'Approval transaction failed');
-    }
-  }, [approveError]);
-
-  useEffect(() => {
-    if (lockError) {
-      toast.error(lockError.message || 'Lock & Bridge transaction failed');
-    }
-  }, [lockError]);
-
-  useEffect(() => {
-    if (burnError) {
-      toast.error(burnError.message || 'Burn & Bridge transaction failed');
-    }
-  }, [burnError]);
-
-  // Refetch data on status changes
-  useEffect(() => {
-    if (isApproveSuccess) {
-      refetchAllowance();
-      toast.success('Token approved successfully!');
-    }
-  }, [isApproveSuccess, refetchAllowance]);
-
-  useEffect(() => {
-    if (isLockSuccess) {
-      refetchTT();
-      toast.success('Tokens successfully locked on Sepolia!');
-    }
-  }, [isLockSuccess, refetchTT]);
-
-  useEffect(() => {
-    if (isBurnSuccess) {
-      refetchWTT();
-      toast.success('Tokens successfully burned on Amoy!');
-    }
-  }, [isBurnSuccess, refetchWTT]);
-
-  const handleMaxClick = () => {
-    setAmount(currentBalanceStr);
-  };
-
-  const handleToggleDirection = () => {
-    setIsSepoliaToAmoy(!isSepoliaToAmoy);
-    setAmount('');
-  };
-
-  // Determine if approval is completed
-  const isApproved =
-    isApproveSuccess || (allowance !== undefined && allowance >= parsedAmount);
+  const handleMaxClick = () => setAmount(currentBalanceStr);
+  const handleToggleDirection = () => { setIsSepoliaToAmoy(!isSepoliaToAmoy); setAmount(''); };
+  const isApproved = isApproveSuccess || (allowance !== undefined && allowance >= parsedAmount);
+  const isWrongNetwork = isConnected && chain?.id !== targetChainId;
 
   const handleAction = () => {
-    if (chain?.id !== targetChainId) {
-      switchChain({ chainId: targetChainId });
-      return;
-    }
-
+    if (chain?.id !== targetChainId) { switchChain({ chainId: targetChainId }); return; }
     if (isSepoliaToAmoy) {
-      if (!isApproved) {
-        approve();
-      } else {
-        lock(parsedAmount);
-      }
+      if (!isApproved) approve(); else lock(parsedAmount);
     } else {
       burn(parsedAmount);
     }
   };
 
-  const handleReset = () => {
-    setAmount('');
-    setSrcTxHash('');
+  const handleReset = () => { setAmount(''); setSrcTxHash(''); };
+
+  // Determine button state
+  const getButtonState = () => {
+    if (!isConnected) return 'connect';
+    if (isWrongNetwork) return 'wrong_network';
+    if (!amount || parseFloat(amount) <= 0) return 'enter_amount';
+    if (parseFloat(amount) > currentBalance) return 'insufficient';
+    if (isSepoliaToAmoy && !isApproved) return 'approve';
+    return 'bridge';
   };
 
-  const isWrongNetwork = isConnected && chain?.id !== targetChainId;
+  const buttonState = getButtonState();
+  const isBusy = isApprovePending || isApproveConfirming || isLockPending || isLockConfirming || isBurnPending || isBurnConfirming;
 
   return (
-    <div className="w-full max-w-[480px] bg-[#111118] border border-[#1E1E2E] rounded-2xl p-6 transition-all duration-300">
+    <div className="w-full max-w-[480px]">
       <AnimatePresence mode="wait">
         {!srcTxHash ? (
           <motion.div
             key="form-view"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.25 }}
             className="flex flex-col"
           >
-            {/* Form Title & Balances Header */}
-            <div className="flex justify-between items-center mb-6">
-              <span className="text-white text-sm font-semibold uppercase tracking-wider font-monument">
-                Bridge Assets
-              </span>
-              <div className="flex flex-col text-right text-[10px] text-[#6B7280]">
+            {/* Floating balance header */}
+            <div className="flex justify-end mb-3 px-1">
+              <div className="flex flex-col text-right text-[11px] text-[#9CA3AF] leading-relaxed">
                 <span>TT (Sepolia): {ttBalance}</span>
                 <span>wTT (Amoy): {wttBalance}</span>
               </div>
             </div>
 
-            {/* Direction Toggle Card */}
-            <div className="flex items-center justify-between bg-[#0D0D16] border border-[#1E1E2E] rounded-xl p-3.5 mb-6">
-              <div className="flex flex-col">
-                <span className="text-[#6B7280] text-[10px] uppercase tracking-wider">Route</span>
-                <span className="text-white font-semibold text-sm mt-0.5">
-                  {fromChainLabel} &rarr; {toChainLabel}
-                </span>
-              </div>
-              <motion.button
-                onClick={handleToggleDirection}
-                whileHover={{ rotate: 180 }}
-                whileTap={{ scale: 0.9 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 15 }}
-                className="w-8 h-8 rounded-full bg-[#1E1E2E] flex items-center justify-center text-[#3B82F6] hover:bg-[#25253A] border border-[#1E1E2E] transition-colors"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M7 16V4M7 4L3 8M7 4l4 4M17 8v12M17 20l-4-4M17 20l4-4" />
-                </svg>
-              </motion.button>
-            </div>
-
-            {/* Amount Input */}
-            <div className="flex flex-col mb-6">
-              <div className="flex justify-between items-center mb-2">
-                <label className="text-[#6B7280] text-xs font-semibold uppercase tracking-wider">Amount</label>
+            {/* ── Box 1: FROM ── */}
+            <div className="bg-[#1C1C1F] rounded-2xl p-5 border border-[#2A2A2E]">
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-[#34D399] text-xs font-semibold uppercase tracking-widest">From</span>
                 <button
                   onClick={handleMaxClick}
-                  className="text-[#3B82F6] hover:underline text-xs font-semibold"
+                  className="text-[#9CA3AF] text-xs hover:text-white transition-colors"
                 >
-                  MAX (Bal: {currentBalanceStr})
+                  Balance: <span className="text-white font-medium">{currentBalanceStr} {fromTokenLabel}</span>
                 </button>
               </div>
 
-              <div className="flex items-center justify-between gap-4 bg-[#0D0D16] border border-[#1E1E2E] rounded-xl p-4">
-                <input
-                  type="text"
-                  pattern="^[0-9]*[.,]?[0-9]*$"
-                  placeholder="0.00"
-                  value={amount}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val === '' || /^[0-9]*[.,]?[0-9]*$/.test(val)) {
-                      setAmount(val);
-                    }
-                  }}
-                  className="text-3xl font-light font-inter bg-transparent outline-none border-none placeholder-[#6B7280] text-white w-full"
-                />
-                
-                {/* Token Label */}
-                <div className="shrink-0 bg-[#1E1E2E] border border-[#1E1E2E] rounded-lg px-3 py-1.5 flex items-center justify-center font-bold text-sm text-white">
-                  {fromTokenLabel}
+              <div className="flex items-center gap-3">
+                {/* Amount input */}
+                <div className="flex flex-col flex-1 min-w-0">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="0.00"
+                    value={amount}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '' || /^[0-9]*[.,]?[0-9]*$/.test(val)) setAmount(val);
+                    }}
+                    className="text-[2.5rem] font-semibold bg-transparent outline-none border-none placeholder-[#3D3D42] text-white w-full p-0 leading-none"
+                  />
+                  <span className="text-[#6B7280] text-xs mt-1.5 flex items-center gap-1">
+                    <span className="opacity-60">⇅</span>
+                    ${amount ? (parseFloat(amount) * 1.0).toFixed(2) : '0.00'}
+                  </span>
+                </div>
+
+                {/* Token selector */}
+                <div className="flex items-center gap-2.5 bg-[#26262A] hover:bg-[#2E2E33] border border-[#333338] rounded-xl px-3.5 py-2.5 cursor-pointer transition-colors select-none shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-[#3B82F6] flex items-center justify-center text-white font-bold text-[10px] shrink-0">
+                    {fromTokenLabel}
+                  </div>
+                  <div className="flex flex-col text-left">
+                    <span className="text-white font-semibold text-sm leading-tight">{fromTokenLabel}</span>
+                    <span className="text-[#9CA3AF] text-[10px] leading-tight">{isSepoliaToAmoy ? 'Sepolia' : 'Amoy'}</span>
+                  </div>
+                  <span className="text-[#6B7280] ml-0.5"><ChevronDown /></span>
                 </div>
               </div>
             </div>
 
-            {/* Info rows */}
-            <div className="flex flex-col gap-2.5 mb-6 px-1 text-sm border-t border-[#1E1E2E] pt-4">
-              <div className="flex justify-between items-center">
-                <span className="text-[#6B7280]">Bridge Fee</span>
-                <span className="text-white font-medium">0.00 {fromTokenLabel}</span>
+            {/* ── Switch arrow ── */}
+            <div className="flex justify-center -my-4 z-10">
+              <motion.button
+                onClick={handleToggleDirection}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9, rotate: 180 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+                className="w-9 h-9 rounded-full bg-[#26262A] border border-[#333338] flex items-center justify-center text-[#9CA3AF] hover:text-white hover:bg-[#2E2E33] shadow-lg transition-colors cursor-pointer"
+              >
+                <DownArrow />
+              </motion.button>
+            </div>
+
+            {/* ── Box 2: TO ── */}
+            <div className="bg-[#1C1C1F] rounded-2xl p-5 border border-[#2A2A2E]">
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-[#34D399] text-xs font-semibold uppercase tracking-widest">To</span>
+                  <button className="text-[#6B7280] hover:text-[#9CA3AF] transition-colors flex items-center gap-1">
+                    <PencilIcon />
+                    <span className="text-xs">Set Recipient</span>
+                  </button>
+                </div>
+                <span className="text-[#9CA3AF] text-xs">Est. Received</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-[#6B7280]">Estimated Time</span>
-                <span className="text-white font-medium">~2-5 minutes</span>
+
+              <div className="flex items-center gap-3">
+                {/* Read-only output */}
+                <div className="flex flex-col flex-1 min-w-0">
+                  <span className={`text-[2.5rem] font-semibold leading-none ${amount && parseFloat(amount) > 0 ? 'text-white' : 'text-[#3D3D42]'}`}>
+                    {amount && parseFloat(amount) > 0 ? parseFloat(amount).toFixed(2) : '0.00'}
+                  </span>
+                  <span className="text-[#6B7280] text-xs mt-1.5 flex items-center gap-1">
+                    <span className="opacity-60">⇅</span>
+                    ${amount ? (parseFloat(amount) * 1.0).toFixed(2) : '0.00'}
+                  </span>
+                </div>
+
+                {/* Token selector */}
+                <div className="flex items-center gap-2.5 bg-[#26262A] border border-[#333338] rounded-xl px-3.5 py-2.5 select-none shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-[#10B981] flex items-center justify-center text-white font-bold text-[10px] shrink-0">
+                    {toTokenLabel}
+                  </div>
+                  <div className="flex flex-col text-left">
+                    <span className="text-white font-semibold text-sm leading-tight">{toTokenLabel}</span>
+                    <span className="text-[#9CA3AF] text-[10px] leading-tight">{toChainLabel}</span>
+                  </div>
+                  <span className="text-[#6B7280] ml-0.5"><ChevronDown /></span>
+                </div>
               </div>
             </div>
 
-            {/* Primary Button Wrapper */}
-            <motion.div whileTap={{ scale: 0.98 }}>
-              {/* Not Connected State */}
-              {!isConnected ? (
-                <button
-                  onClick={openConnectModal}
-                  className="w-full h-12 rounded-xl bg-[#3B82F6] hover:bg-[#60A5FA] text-white font-medium text-sm transition-colors duration-200"
-                >
-                  Connect Wallet
-                </button>
-              ) : isWrongNetwork ? (
-                /* Wrong Network Switcher State */
-                <button
-                  onClick={handleAction}
-                  className="w-full h-12 rounded-xl bg-[#3B82F6] hover:bg-[#60A5FA] text-white font-medium text-sm transition-colors duration-200"
-                >
-                  Switch Network to {fromChainLabel}
-                </button>
-              ) : !amount || parseFloat(amount) <= 0 ? (
-                /* Empty Input State */
-                <button
-                  disabled
-                  className="w-full h-12 rounded-xl bg-[#1E1E2E] text-[#6B7280] border border-[#1E1E2E] font-medium text-sm cursor-not-allowed"
-                >
-                  Enter an amount
-                </button>
-              ) : parseFloat(amount) > currentBalance ? (
-                /* Insufficient Balance State */
-                <button
-                  disabled
-                  className="w-full h-12 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 font-medium text-sm cursor-not-allowed"
-                >
-                  Insufficient Balance
-                </button>
-              ) : isSepoliaToAmoy && !isApproved ? (
-                /* Sepolia -> Amoy Step 1: Approve TT */
-                <button
-                  onClick={handleAction}
-                  disabled={isApprovePending || isApproveConfirming}
-                  className="w-full h-12 rounded-xl bg-[#3B82F6] hover:bg-[#60A5FA] text-white font-medium text-sm flex items-center justify-center gap-2 transition-colors duration-200"
-                >
-                  {isApprovePending || isApproveConfirming ? (
-                    <>
-                      <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                      </svg>
-                      {isApproveConfirming ? 'Confirming Approval...' : 'Approving...'}
-                    </>
-                  ) : (
-                    `Approve ${fromTokenLabel}`
-                  )}
-                </button>
-              ) : (
-                /* Active Bridge Actions: Lock & Bridge or Burn & Bridge */
-                <button
-                  onClick={handleAction}
-                  disabled={isLockPending || isLockConfirming || isBurnPending || isBurnConfirming}
-                  className="w-full h-12 rounded-xl bg-[#3B82F6] hover:bg-[#60A5FA] text-white font-medium text-sm flex items-center justify-center gap-2 transition-all duration-200 glow-blue-strong"
-                >
-                  {isLockPending || isLockConfirming || isBurnPending || isBurnConfirming ? (
-                    <>
-                      <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                      </svg>
-                      Bridging...
-                    </>
-                  ) : isSepoliaToAmoy ? (
-                    'Lock & Bridge'
-                  ) : (
-                    'Burn & Bridge'
-                  )}
-                </button>
-              )}
-            </motion.div>
+            {/* ── Box 3: Branding + Action ── */}
+            <div className="bg-[#1C1C1F] rounded-2xl p-5 border border-[#2A2A2E] mt-2">
+              {/* Branding row */}
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <span className="text-[#34D399] text-sm">⚡</span>
+                <span className="text-[#34D399] font-semibold text-sm tracking-wide">Axon Bridge</span>
+              </div>
+
+              {/* Action Button */}
+              <motion.div whileTap={{ scale: 0.98 }}>
+                {buttonState === 'connect' && (
+                  <button
+                    onClick={openConnectModal}
+                    className="w-full h-12 rounded-xl bg-[#3B82F6] hover:bg-[#5094F8] text-white font-semibold text-sm transition-all duration-200"
+                  >
+                    Connect Wallet
+                  </button>
+                )}
+                {buttonState === 'wrong_network' && (
+                  <button
+                    onClick={handleAction}
+                    className="w-full h-12 rounded-xl bg-[#3B82F6] hover:bg-[#5094F8] text-white font-semibold text-sm transition-all duration-200"
+                  >
+                    Switch to {fromChainLabel}
+                  </button>
+                )}
+                {buttonState === 'enter_amount' && (
+                  <button disabled className="w-full h-12 rounded-xl bg-[#26262A] text-[#6B7280] border border-[#333338] font-semibold text-sm cursor-not-allowed">
+                    Enter an amount
+                  </button>
+                )}
+                {buttonState === 'insufficient' && (
+                  <button disabled className="w-full h-12 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 font-semibold text-sm cursor-not-allowed">
+                    Insufficient Balance
+                  </button>
+                )}
+                {buttonState === 'approve' && (
+                  <button
+                    onClick={handleAction}
+                    disabled={isBusy}
+                    className="w-full h-12 rounded-xl bg-[#3B82F6] hover:bg-[#5094F8] text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
+                  >
+                    {isBusy ? <><Spinner />{isApproveConfirming ? 'Confirming...' : 'Approving...'}</> : `Approve ${fromTokenLabel}`}
+                  </button>
+                )}
+                {buttonState === 'bridge' && (
+                  <button
+                    onClick={handleAction}
+                    disabled={isBusy}
+                    className="w-full h-12 rounded-xl bg-[#3B82F6] hover:bg-[#5094F8] text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
+                  >
+                    {isBusy ? <><Spinner />Bridging...</> : isSepoliaToAmoy ? 'Lock & Bridge' : 'Burn & Bridge'}
+                  </button>
+                )}
+              </motion.div>
+            </div>
+
+            {/* ── Floating fee details below ── */}
+            <div className="flex flex-col gap-1.5 mt-4 px-1">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-[#6B7280]">Bridge Fee</span>
+                <span className="text-[#9CA3AF] font-medium">0.00 TT</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-[#6B7280]">Estimated Time</span>
+                <span className="text-[#9CA3AF] font-medium">~2-5 minutes</span>
+              </div>
+            </div>
           </motion.div>
         ) : (
-          /* Stepper Status View */
+          /* Transaction Status View */
           <motion.div
             key="status-view"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="flex flex-col"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.25 }}
+            className="bg-[#1C1C1F] rounded-2xl p-6 border border-[#2A2A2E]"
           >
             <div className="flex justify-between items-center mb-6">
-              <span className="text-white text-sm font-semibold uppercase tracking-wider font-monument">
-                Bridge Progress
-              </span>
-              <button
-                onClick={handleReset}
-                className="text-[#6B7280] hover:text-white text-xs transition-colors duration-200"
-              >
-                Reset / Back
+              <span className="text-white text-sm font-semibold uppercase tracking-wider">Bridge Progress</span>
+              <button onClick={handleReset} className="text-[#6B7280] hover:text-white text-xs transition-colors">
+                ← Back
               </button>
             </div>
-
             <TransactionStatus srcTxHash={srcTxHash} />
           </motion.div>
         )}
