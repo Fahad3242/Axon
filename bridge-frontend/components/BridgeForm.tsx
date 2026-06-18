@@ -247,13 +247,14 @@ export default function BridgeForm() {
                 {buttonState === 'connect' && (
                   <button
                     onClick={openConnectModal}
-                    className="w-full h-14 rounded-xl bg-[#3984f0] hover:bg-[#2a6fd4] text-[#0d1117] font-bold text-sm uppercase tracking-widest flex items-center justify-center gap-2.5 transition-all duration-200 shadow-lg shadow-[#3984f0]/20"
+                    className="w-full h-14 rounded-xl bg-[#3984f0] hover:bg-[#2a6fd4] text-[#0d1117] font-bold text-sm uppercase tracking-widest flex items-center justify-center gap-3 transition-all duration-200 shadow-lg shadow-[#3984f0]/20"
                   >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M21 18v1a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v1" />
-                      <polyline points="15 3 21 3 21 9" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                      <line x1="10" y1="14" x2="21" y2="3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                    </svg>
+                    <span className="w-8 h-8 rounded-lg bg-[#1a4a9e] flex items-center justify-center shrink-0">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3984f0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="2" y="5" width="20" height="14" rx="2" />
+                        <path d="M2 10h20" />
+                      </svg>
+                    </span>
                     Connect Wallet
                   </button>
                 )}
