@@ -140,7 +140,7 @@ export default function BridgeForm() {
             {/* ── Box 1: FROM ── */}
             <div className="bg-[#1C1C1F] rounded-2xl p-5 border border-[#2A2A2E]">
               <div className="flex justify-between items-center mb-4">
-                <span className="text-[#34D399] text-xs font-semibold uppercase tracking-widest">From</span>
+                <span className="text-[#3984f0] text-xs font-semibold uppercase tracking-widest">From</span>
                 <button
                   onClick={handleMaxClick}
                   className="text-[#9CA3AF] text-xs hover:text-white transition-colors"
@@ -200,7 +200,7 @@ export default function BridgeForm() {
             <div className="bg-[#1C1C1F] rounded-2xl p-5 border border-[#2A2A2E]">
               <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-2">
-                  <span className="text-[#34D399] text-xs font-semibold uppercase tracking-widest">To</span>
+                  <span className="text-[#3984f0] text-xs font-semibold uppercase tracking-widest">To</span>
                   <button className="text-[#6B7280] hover:text-[#9CA3AF] transition-colors flex items-center gap-1">
                     <PencilIcon />
                     <span className="text-xs">Set Recipient</span>
