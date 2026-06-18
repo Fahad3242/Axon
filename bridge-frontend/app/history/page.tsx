@@ -228,7 +228,7 @@ export default function HistoryPage() {
   } as const;
 
   return (
-    <div className="min-h-screen bg-[#08080F] text-white flex flex-col font-inter">
+    <div className="min-h-screen bg-[#151517] text-white flex flex-col font-inter">
       <Navbar />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 md:px-8 pt-20 pb-16">

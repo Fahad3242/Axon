@@ -20,9 +20,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${playfair.variable} ${barlow.variable} bg-[#08080F]`}
+      className={`${inter.variable} ${playfair.variable} ${barlow.variable} bg-[#151517]`}
     >
-      <body className="antialiased bg-[#08080F] text-white min-h-screen">
+      <body className="antialiased bg-[#151517] text-white min-h-screen">
         <Providers>
           {children}
         </Providers>

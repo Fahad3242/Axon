@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    --background: #08080F;
+    --background: #151517;
     --foreground: #FFFFFF;
     --card: #111118;
     --card-foreground: #FFFFFF;
@@ -29,7 +29,7 @@
   }
 
   .dark {
-    --background: #08080F;
+    --background: #151517;
     --foreground: #FFFFFF;
     --card: #111118;
     --card-foreground: #FFFFFF;
@@ -51,14 +51,14 @@
   }
 
   html {
-    background-color: #08080F;
+    background-color: #151517;
     color: #FFFFFF;
     font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
     scroll-behavior: smooth;
   }
 
   body {
-    background-color: #08080F;
+    background-color: #151517;
     color: #FFFFFF;
     font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   }

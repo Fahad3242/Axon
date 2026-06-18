@@ -16,7 +16,7 @@ export default function Page() {
   };
 
   return (
-    <div className="min-h-screen bg-[#08080F] text-white flex flex-col font-inter">
+    <div className="min-h-screen bg-[#151517] text-white flex flex-col font-inter">
       <Navbar />
 
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-12 md:py-20">
