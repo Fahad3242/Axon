@@ -238,9 +238,8 @@ export default function BridgeForm() {
             {/* ── Box 3: Branding + Action ── */}
             <div className="bg-[#1C1C1F] rounded-2xl p-5 border border-[#2A2A2E] mt-2">
               {/* Branding row */}
-              <div className="flex items-center justify-center gap-2 mb-4">
-                <span className="text-[#34D399] text-sm">⚡</span>
-                <span className="text-[#34D399] font-semibold text-sm tracking-wide">Axon Bridge</span>
+              <div className="flex items-center justify-center mb-4">
+                <span className="text-[#3984f0] font-semibold text-sm tracking-wide">Axon Bridge</span>
               </div>
 
               {/* Action Button */}
