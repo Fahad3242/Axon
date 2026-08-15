@@ -6,11 +6,13 @@ export function useApproveToken(spender: `0x${string}`, amount: bigint) {
 
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash: txHash,
+    chainId: 11155111,
   });
 
   const approve = () => {
     if (!spender) return;
     writeContract({
+      chainId: 11155111,
       address: TOKEN_ADDRESS,
       abi: ERC20_ABI,
       functionName: 'approve',

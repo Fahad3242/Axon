@@ -6,10 +6,12 @@ export function useBurnTokens() {
 
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash: txHash,
+    chainId: 80002,
   });
 
   const burn = (amount: bigint) => {
     writeContract({
+      chainId: 80002,
       address: BRIDGE_B_ADDRESS,
       abi: BRIDGE_B_ABI,
       functionName: 'burnTokens',
