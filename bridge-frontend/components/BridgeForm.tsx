@@ -30,7 +30,8 @@ export default function BridgeForm() {
   const targetToken = forward ? 'wTT' : 'TT';
   const sourceNet = forward ? 'Sepolia' : 'Amoy';
   const targetNet = forward ? 'Amoy' : 'Sepolia';
-  const targetChainId = forward ? 11155111 : 80002;
+  // A bridge transaction must be signed on the route's source chain.
+  const sourceChainId = forward ? 11155111 : 80002;
   const parsedAmount = amount ? parseUnits(amount, 18) : 0n;
   const { data: allowance, refetch: refetchAllowance } = useReadContract({ address: TOKEN_ADDRESS, abi: ERC20_ABI, functionName: 'allowance', args: address && BRIDGE_A_ADDRESS ? [address, BRIDGE_A_ADDRESS] : undefined, query: { enabled: !!address && forward } });
   const approval = useApproveToken(BRIDGE_A_ADDRESS, parsedAmount);
@@ -50,15 +51,29 @@ export default function BridgeForm() {
   useEffect(() => { if (locking.isSuccess) { refetchTT(); toast.success('Tokens locked on Sepolia'); } }, [locking.isSuccess, refetchTT]);
   useEffect(() => { if (burning.isSuccess) { refetchWTT(); toast.success('Tokens burned on Amoy'); } }, [burning.isSuccess, refetchWTT]);
 
-  const state = !isConnected ? 'connect' : chain?.id !== targetChainId ? 'network' : !amount || numericAmount <= 0 ? 'amount' : numericAmount > Number(balance || 0) ? 'funds' : forward && !approved ? 'approve' : 'bridge';
+  // Keep the displayed route aligned with network changes made from the header.
+  useEffect(() => {
+    if (chain?.id === 11155111) setForward(true);
+    if (chain?.id === 80002) setForward(false);
+  }, [chain?.id]);
+
+  const state = !isConnected ? 'connect' : chain?.id !== sourceChainId ? 'network' : !amount || numericAmount <= 0 ? 'amount' : numericAmount > Number(balance || 0) ? 'funds' : forward && !approved ? 'approve' : 'bridge';
   const labels = { connect: 'Connect wallet', network: `Switch to ${sourceNet}`, amount: 'Enter an amount', funds: 'Insufficient balance', approve: `Approve ${sourceToken}`, bridge: `Bridge ${sourceToken} to ${targetNet}` };
   const act = () => {
     if (state === 'connect') return openConnectModal?.();
-    if (state === 'network') return switchChain({ chainId: targetChainId });
+    if (state === 'network') return switchChain({ chainId: sourceChainId });
     if (state === 'approve') return approval.approve();
     if (state === 'bridge') return forward ? locking.lock(parsedAmount) : burning.burn(parsedAmount);
   };
-  const flip = () => { setForward(v => !v); setAmount(''); };
+  const flip = () => {
+    const nextForward = !forward;
+    const nextSourceChainId = nextForward ? 11155111 : 80002;
+    setForward(nextForward);
+    setAmount('');
+    if (isConnected && chain?.id !== nextSourceChainId) {
+      switchChain({ chainId: nextSourceChainId });
+    }
+  };
 
   if (srcTxHash) return <div className="bridge-wrap"><section className="bridge-card"><TransactionStatus srcTxHash={srcTxHash} /><button className="bridge-cta enabled" onClick={() => { setSrcTxHash(''); setAmount(''); }}>Start another transfer</button></section></div>;
 
