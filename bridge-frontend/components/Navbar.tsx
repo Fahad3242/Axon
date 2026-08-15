@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ArrowUpRight, History } from 'lucide-react';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
+import axonLogo from '@/axon-symbol-cropped.png';
 import ConnectWallet from './ConnectWallet';
 
 export default function Navbar() {
@@ -11,7 +13,7 @@ export default function Navbar() {
   return (
     <header className="topbar">
       <Link href="/" className="brand" aria-label="AXON home">
-        <span className="brand-mark"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12h4l2-6 4 12 2-6h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
+        <span className="brand-mark brand-logo"><Image src={axonLogo} alt="" priority className="brand-logo-image" /></span>
         <span>AXON</span>
       </Link>
       <nav className="nav-tabs">
