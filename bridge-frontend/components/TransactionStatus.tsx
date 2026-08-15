@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { toast } from 'sonner';
 import { useTxStatus } from '@/hooks/useTxStatus';
 
@@ -10,6 +10,7 @@ interface TransactionStatusProps {
 }
 
 export default function TransactionStatus({ srcTxHash }: TransactionStatusProps) {
+  const reduceMotion = useReducedMotion();
   // Poll relayer status
   const { status, destTxHash, error } = useTxStatus(srcTxHash);
 
@@ -109,9 +110,25 @@ export default function TransactionStatus({ srcTxHash }: TransactionStatusProps)
                   )}
 
                   {isActive && (
-                    <div className="flex items-center justify-center w-8 h-8 rounded-full border border-[#3B82F6] bg-[#3B82F6]/5 glow-blue">
-                      <div className="absolute inset-0 w-8 h-8 rounded-full border border-[#3B82F6]/20 animate-ping opacity-75" />
-                      <div className="w-3.5 h-3.5 rounded-full border-2 border-t-[#3B82F6] border-[#3B82F6]/20 animate-spin" />
+                    <div className="relative flex items-center justify-center w-8 h-8 rounded-full border-2 border-[#3B82F6] bg-[#3B82F6]/15 shadow-[0_0_16px_rgba(59,130,246,0.75)]">
+                      {[0, 0.65].map((delay) => (
+                        <motion.div
+                          key={delay}
+                          className="pointer-events-none absolute inset-0 rounded-full border-2 border-[#3B82F6] shadow-[0_0_18px_rgba(59,130,246,0.65)]"
+                          initial={{ scale: 1, opacity: 0.85 }}
+                          animate={
+                            reduceMotion
+                              ? { scale: 1.35, opacity: 0.45 }
+                              : { scale: [1, 1.45, 2.15], opacity: [0.85, 0.5, 0] }
+                          }
+                          transition={
+                            reduceMotion
+                              ? { duration: 0 }
+                              : { duration: 1.55, delay, repeat: Infinity, ease: 'easeOut' }
+                          }
+                        />
+                      ))}
+                      <div className="w-4 h-4 rounded-full border-[3px] border-[#3B82F6]/25 border-t-[#60A5FA] border-r-[#60A5FA] animate-spin shadow-[0_0_10px_rgba(96,165,250,0.9)]" />
                     </div>
                   )}
 
