@@ -2,10 +2,11 @@ import { useReadContract, useAccount } from 'wagmi';
 import { ERC20_ABI } from '@/lib/contracts';
 import { formatUnits } from 'viem';
 
-export function useTokenBalance(tokenAddress: `0x${string}`) {
+export function useTokenBalance(tokenAddress: `0x${string}`, chainId: number) {
   const { address } = useAccount();
 
   const { data: balanceData, isLoading: isBalanceLoading, refetch } = useReadContract({
+    chainId,
     address: tokenAddress,
     abi: ERC20_ABI,
     functionName: 'balanceOf',
@@ -16,6 +17,7 @@ export function useTokenBalance(tokenAddress: `0x${string}`) {
   });
 
   const { data: decimals, isLoading: isDecimalsLoading } = useReadContract({
+    chainId,
     address: tokenAddress,
     abi: ERC20_ABI,
     functionName: 'decimals',

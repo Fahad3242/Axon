@@ -23,8 +23,8 @@ export default function BridgeForm() {
   const [recipientOpen, setRecipientOpen] = useState(false);
   const [recipient, setRecipient] = useState('');
   const [srcTxHash, setSrcTxHash] = useState('');
-  const { balance: ttBalance, refetch: refetchTT } = useTokenBalance(TOKEN_ADDRESS);
-  const { balance: wttBalance, refetch: refetchWTT } = useTokenBalance(WRAPPED_TOKEN_ADDRESS);
+  const { balance: ttBalance, refetch: refetchTT } = useTokenBalance(TOKEN_ADDRESS, 11155111);
+  const { balance: wttBalance, refetch: refetchWTT } = useTokenBalance(WRAPPED_TOKEN_ADDRESS, 80002);
   const balance = forward ? ttBalance : wttBalance;
   const sourceToken = forward ? 'TT' : 'wTT';
   const targetToken = forward ? 'wTT' : 'TT';
@@ -33,7 +33,7 @@ export default function BridgeForm() {
   // A bridge transaction must be signed on the route's source chain.
   const sourceChainId = forward ? 11155111 : 80002;
   const parsedAmount = amount ? parseUnits(amount, 18) : 0n;
-  const { data: allowance, refetch: refetchAllowance } = useReadContract({ address: TOKEN_ADDRESS, abi: ERC20_ABI, functionName: 'allowance', args: address && BRIDGE_A_ADDRESS ? [address, BRIDGE_A_ADDRESS] : undefined, query: { enabled: !!address && forward } });
+  const { data: allowance, refetch: refetchAllowance } = useReadContract({ chainId: 11155111, address: TOKEN_ADDRESS, abi: ERC20_ABI, functionName: 'allowance', args: address && BRIDGE_A_ADDRESS ? [address, BRIDGE_A_ADDRESS] : undefined, query: { enabled: !!address && forward } });
   const approval = useApproveToken(BRIDGE_A_ADDRESS, parsedAmount);
   const locking = useLockTokens();
   const burning = useBurnTokens();
