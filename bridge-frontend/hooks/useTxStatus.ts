@@ -13,6 +13,16 @@ export function useTxStatus(srcTxHash: string) {
     queryKey: ['txStatus', srcTxHash],
     queryFn: async () => {
       const response = await fetch(`${relayerUrl}/bridge/tx/${srcTxHash}`);
+      if (response.status === 404) {
+        const recovery = await fetch(`${relayerUrl}/bridge/relay`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ srcTxHash }),
+        });
+        if (recovery.ok) {
+          return { status: 'PENDING' as const };
+        }
+      }
       if (!response.ok) {
         throw new Error('Failed to fetch tx status');
       }
