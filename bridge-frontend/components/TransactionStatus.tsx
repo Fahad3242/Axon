@@ -12,16 +12,24 @@ interface TransactionStatusProps {
 export default function TransactionStatus({ srcTxHash }: TransactionStatusProps) {
   const reduceMotion = useReducedMotion();
   // Poll relayer status
-  const { status, destTxHash, error } = useTxStatus(srcTxHash);
+  const { status, destTxHash, srcChain, error } = useTxStatus(srcTxHash);
 
   // Read transaction route from history to determine explorer base URLs
-  let isSepoliaSource = true;
-  if (typeof window !== 'undefined') {
-    const existingHistory = localStorage.getItem('axon_bridge_history');
-    const historyList = existingHistory ? JSON.parse(existingHistory) : [];
-    const match = historyList.find((item: { sourceTx: string; route: string }) => item.sourceTx === srcTxHash);
-    if (match) {
-      isSepoliaSource = match.route.startsWith('Sepolia');
+  let isSepoliaSource = srcChain !== 'amoy';
+  if (!srcChain && typeof window !== 'undefined') {
+    try {
+      const existingHistory = localStorage.getItem('axon_bridge_history');
+      const historyList = existingHistory ? JSON.parse(existingHistory) : [];
+      const match = historyList.find((item: { sourceTx?: string; eventTxHash?: string; route?: string; srcChain?: string }) =>
+        (item.sourceTx === srcTxHash || item.eventTxHash === srcTxHash)
+      );
+      if (match?.srcChain || match?.route) {
+        isSepoliaSource = match.srcChain
+          ? match.srcChain.toLowerCase() === 'sepolia'
+          : match.route!.toLowerCase().startsWith('sepolia');
+      }
+    } catch {
+      // The relayer response remains the source of truth if cached history is malformed.
     }
   }
 
@@ -49,7 +57,7 @@ export default function TransactionStatus({ srcTxHash }: TransactionStatusProps)
   }
 
   const steps = [
-    { title: 'Locked', desc: isSepoliaSource ? 'Locked on Sepolia' : 'Burned on Amoy' },
+    { title: isSepoliaSource ? 'Locked' : 'Burned', desc: isSepoliaSource ? 'Locked on Sepolia' : 'Burned on Amoy' },
     { title: 'Confirming', desc: 'Awaiting block confirmations' },
     { title: 'Relaying', desc: 'Relayer submitting destination tx' },
     { title: 'Completed', desc: 'Tokens minted/released' },

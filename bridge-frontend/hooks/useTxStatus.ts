@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 interface TxStatusResponse {
   status: 'PENDING' | 'CONFIRMING' | 'RELAYING' | 'COMPLETED' | 'FAILED';
   destTxHash?: string;
+  srcChain?: 'sepolia' | 'amoy';
 }
 
 export function useTxStatus(srcTxHash: string) {
@@ -30,6 +31,7 @@ export function useTxStatus(srcTxHash: string) {
   return {
     status: data?.status,
     destTxHash: data?.destTxHash,
+    srcChain: data?.srcChain,
     isLoading,
     error,
   };
