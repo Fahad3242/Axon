@@ -6,7 +6,52 @@ import { ArrowRight, ExternalLink, History as HistoryIcon, Loader2, Wallet } fro
 import { useAccount } from 'wagmi';
 import Navbar from '@/components/Navbar';
 
-interface HistoryItem { id:string; time:string|number; route:string; amount:string; status:'PENDING'|'CONFIRMING'|'RELAYING'|'COMPLETED'|'FAILED'; sourceTx:string; destTx?:string }
+type HistoryStatus = 'PENDING'|'CONFIRMING'|'RELAYING'|'COMPLETED'|'FAILED';
+interface HistoryItem { id:string; time:string|number; route:string; amount:string; status:HistoryStatus; sourceTx:string; destTx?:string }
+
+const statuses: HistoryStatus[] = ['PENDING','CONFIRMING','RELAYING','COMPLETED','FAILED'];
+
+function formatTokenAmount(value: unknown, symbol: string) {
+  if (typeof value !== 'string' && typeof value !== 'number') return `0 ${symbol}`;
+  const raw = String(value);
+  if (!/^\d+$/.test(raw)) return `${raw} ${symbol}`;
+  try {
+    const units = BigInt(raw);
+    const whole = units / 10n ** 18n;
+    const fraction = (units % 10n ** 18n).toString().padStart(18, '0').replace(/0+$/, '').slice(0, 4);
+    return `${whole}${fraction ? `.${fraction}` : ''} ${symbol}`;
+  } catch {
+    return `${raw} ${symbol}`;
+  }
+}
+
+function normalizeHistoryItem(value: unknown, index: number): HistoryItem | null {
+  if (!value || typeof value !== 'object') return null;
+  const item = value as Record<string, unknown>;
+  const srcChain = String(item.srcChain ?? '').toLowerCase();
+  const isSepoliaSource = srcChain === 'sepolia' || String(item.route ?? '').toLowerCase().startsWith('sepolia');
+  const route = typeof item.route === 'string' && item.route.trim()
+    ? item.route
+    : isSepoliaSource ? 'Sepolia → Polygon Amoy' : 'Polygon Amoy → Sepolia';
+  const sourceTx = String(item.sourceTx ?? item.eventTxHash ?? item.srcTxHash ?? '');
+  const statusValue = String(item.status ?? 'PENDING').toUpperCase() as HistoryStatus;
+  const symbol = isSepoliaSource ? 'TT' : 'wTT';
+
+  return {
+    id: String(item.id ?? sourceTx ?? index),
+    time: (item.time ?? item.createdAt ?? item.updatedAt ?? Date.now()) as string | number,
+    route,
+    amount: typeof item.route === 'string' ? String(item.amount ?? `0 ${symbol}`) : formatTokenAmount(item.amount, symbol),
+    status: statuses.includes(statusValue) ? statusValue : 'PENDING',
+    sourceTx,
+    destTx: typeof (item.destTx ?? item.destTxHash) === 'string' ? String(item.destTx ?? item.destTxHash) : undefined,
+  };
+}
+
+function normalizeHistory(value: unknown): HistoryItem[] {
+  if (!Array.isArray(value)) return [];
+  return value.map(normalizeHistoryItem).filter((item): item is HistoryItem => item !== null);
+}
 
 export default function HistoryPage(){
   const {address,isConnected}=useAccount();
@@ -15,8 +60,8 @@ export default function HistoryPage(){
   const relayerUrl=process.env.NEXT_PUBLIC_RELAYER_API_URL||'http://localhost:3001';
   const fetchHistory=useCallback(async(showLoading=false)=>{
     if(!address){setHistory([]);setLoading(false);return} if(showLoading)setLoading(true);
-    try{const response=await fetch(`${relayerUrl}/bridge/history/${address}`);if(!response.ok)throw new Error();setHistory(await response.json())}
-    catch{const local=localStorage.getItem('axon_bridge_history');setHistory(local?JSON.parse(local):[])}finally{setLoading(false)}
+    try{const response=await fetch(`${relayerUrl}/bridge/history/${address}`);if(!response.ok)throw new Error();setHistory(normalizeHistory(await response.json()))}
+    catch{const local=localStorage.getItem('axon_bridge_history');try{setHistory(normalizeHistory(local?JSON.parse(local):[]))}catch{setHistory([])}}finally{setLoading(false)}
   },[address,relayerUrl]);
   useEffect(()=>{fetchHistory(true)},[fetchHistory]);
   useEffect(()=>{if(!address)return;const timer=setInterval(()=>{if(history.some(tx=>!['COMPLETED','FAILED'].includes(tx.status)))fetchHistory()},10000);return()=>clearInterval(timer)},[address,history,fetchHistory]);
